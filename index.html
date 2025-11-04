@@ -175,7 +175,7 @@ const messages = [
 "Aku harap kamu bisa senyum sebentar. Saatnya cek lagu kamu sekarang!",
 "Kamu punya aura positif yang bikin nyaman. Yuk, sekarang waktunya cek lagu kamu!",
 "Hei, jangan lupa minum air ya. Sekarang ayo cek lagu kamu!",
-"Aku senang bisa ngobrol sama kamu sebentar. Saatnya cek lagu kamu sekarang!",
+"Aku senang bisa ngobrol sama kamu sebentar. Saatnya cek lagu kamu!",
 "Kamu hebat dan pantas senyum. Yuk, sekarang waktunya cek lagu kamu!",
 "Hei, kalau capek jangan dipaksa. Sekarang ayo cek lagu kamu!",
 "Aku harap semua nyaman sekarang. Saatnya cek lagu kamu sekarang!",
@@ -206,14 +206,23 @@ function typeWriter(text,i=0){
 }
 
 // Load animasi
-window.addEventListener("load", ()=>{
+function initPage(){
+  avatar.classList.remove("loading");
   avatar.classList.add("show");
-  setTimeout(()=> nameTag.classList.add("show"), 200);
-  setTimeout(()=> chatBubble.classList.add("show"), 400);
-  setTimeout(()=> typeWriter(chatMessage), 500);
-
-  // Play audio (beberapa browser butuh user interaction)
+  nameTag.classList.add("show");
+  chatBubble.classList.add("show");
+  typeWriter(chatMessage);
   audio.play().catch(()=>{});
+}
+
+// Load pertama kali
+window.addEventListener("load", initPage);
+
+// Tangani Back button / cache
+window.addEventListener("pageshow", function(event) {
+  if(event.persisted){
+    initPage();
+  }
 });
 
 // Pastikan audio tetap play saat tap layar
@@ -223,14 +232,11 @@ document.body.addEventListener("click", ()=>{
 
 // Tombol lanjut
 continueBtn.addEventListener("click", ()=>{
-  // Bubble & name hilang
   chatBubble.style.transition = "opacity 0.3s ease-out";
   chatBubble.style.opacity = 0;
   nameTag.style.transition = "opacity 0.3s ease-out";
   nameTag.style.opacity = 0;
-  // Avatar loading animasi
   avatar.classList.add("loading");
-  // redirect setelah 1.5s
   setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",1500);
 });
 </script>
