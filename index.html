@@ -242,6 +242,7 @@ function initPage(){
   avatar.classList.remove("fadeOut");
   nameTag.classList.remove("fadeOut");
   chatBubble.classList.remove("fadeOut");
+  continueBtn.classList.remove("fadeOut");
   avatar.classList.add("show");
   nameTag.classList.add("show");
   chatBubble.classList.add("show");
@@ -250,7 +251,7 @@ function initPage(){
   audio.play().catch(()=>{});
 }
 
-// Load pertama
+// Load pertama dan handle back button cache
 window.addEventListener("load", initPage);
 window.addEventListener("pageshow", e=>{
   if(e.persisted){ initPage(); }
@@ -270,9 +271,7 @@ continueBtn.addEventListener("click", ()=>{
 
 // Pull to refresh
 let startY=0, isPull=false;
-document.addEventListener("touchstart", e=>{
-  startY=e.touches[0].clientY;
-});
+document.addEventListener("touchstart", e=>{ startY=e.touches[0].clientY; });
 document.addEventListener("touchmove", e=>{
   let diff = e.touches[0].clientY - startY;
   if(diff>50){
