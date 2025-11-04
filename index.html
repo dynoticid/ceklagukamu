@@ -19,32 +19,14 @@ html,body{
   overflow:hidden;
   text-align:center;
 }
-.pull-refresh-indicator{
-  position:absolute;
-  top:10px;
-  width:40px;
-  height:40px;
-  border:4px solid rgba(255,255,255,0.3);
-  border-top-color:#fff;
-  border-radius:50%;
-  animation:none;
-  opacity:0;
-  transition: opacity 0.3s ease;
-}
-.pull-refresh-indicator.active{
-  animation:spin 1s linear infinite;
-  opacity:1;
-}
-@keyframes spin{
-  0%{transform:rotate(0deg);}
-  100%{transform:rotate(360deg);}
-}
+
 .avatar-container{
   display:flex;
   flex-direction:column;
   align-items:center;
   gap:10px;
 }
+
 .avatar-container img{
   width:120px;
   height:120px;
@@ -56,14 +38,12 @@ html,body{
   transform:translateY(20px);
   transition: all 0.4s ease-out;
 }
+
 .avatar-container img.show{
   opacity:1;
   transform:translateY(0);
 }
-.avatar-container img.fade{
-  opacity:0;
-  transform:scale(0.9);
-}
+
 .name-tag{
   font-weight:600;
   font-size:1rem;
@@ -73,14 +53,12 @@ html,body{
   transform:translateY(10px);
   transition: all 0.4s ease-out;
 }
+
 .name-tag.show{
   opacity:1;
   transform:translateY(0);
 }
-.name-tag.fade{
-  opacity:0;
-  transform:scale(0.9);
-}
+
 .chat-bubble{
   background:rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
@@ -92,20 +70,22 @@ html,body{
   font-size:1rem;
   box-shadow:0 5px 10px rgba(0,0,0,0.2);
   text-align:center;
-  margin:0 auto;
   position:relative;
   opacity:0;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
   overflow-y:auto;
 }
+
 .chat-bubble.show{
   opacity:1;
 }
+
 #chatText{
   display:block;
   word-wrap: break-word;
-  text-align:center;
 }
+
+/* Tombol lanjut */
 #continueBtn{
   margin-top:25px;
   padding:10px 24px;
@@ -122,23 +102,55 @@ html,body{
   opacity:0;
   transition: all 0.3s ease-out;
 }
+
+/* Tombol muncul + animasi menggeliat */
 #continueBtn.show{
   transform: scale(1);
   opacity:1;
+  animation: pulseClick 1.2s infinite;
 }
-#continueBtn.fade{
-  opacity:0;
-  transform:scale(0.9);
-}
+
+/* Hover */
 #continueBtn:hover{
   background:rgba(255,255,255,0.35);
-  transform: scale(1.05);
+  transform: scale(1.15);
+}
+
+/* Pulse klik animasi */
+@keyframes pulseClick{
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* Fade out animasi untuk avatar dan tombol */
+.fadeOut{
+  opacity:0 !important;
+  transition: opacity 0.5s ease-out;
+}
+
+/* Pull to refresh */
+#pullRefresh{
+  position:absolute;
+  top:10px;
+  width:40px;
+  height:40px;
+  border:4px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation: spin 1s linear infinite;
+  display:none;
+  z-index:999;
+}
+
+@keyframes spin{
+  0%{transform:rotate(0deg);}
+  100%{transform:rotate(360deg);}
 }
 </style>
 </head>
 <body>
 
-<div class="pull-refresh-indicator" id="refreshIndicator"></div>
+<div id="pullRefresh"></div>
 
 <audio id="bgAudio" autoplay loop>
   <source src="https://k.top4top.io/m_35959ooho0.mp3" type="audio/mpeg">
@@ -160,7 +172,7 @@ const chatBubble = document.getElementById("chatBubble");
 const chatText = document.getElementById("chatText");
 const continueBtn = document.getElementById("continueBtn");
 const audio = document.getElementById("bgAudio");
-const refreshIndicator = document.getElementById("refreshIndicator");
+const pull = document.getElementById("pullRefresh");
 
 // 50 template percakapan manusiawi
 const messages = [
@@ -217,71 +229,63 @@ const messages = [
 "Jangan lupa tersenyum sebentar. Sekarang ayo cek lagu kamu!"
 ];
 
-function getRandomMessage(){
-  return messages[Math.floor(Math.random()*messages.length)];
-}
-
 function typeWriter(text,i=0){
-  chatText.innerHTML = "";
-  function step(){
-    if(i<text.length){
-      chatText.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(step,30);
-    }
+  if(i<text.length){
+    chatText.innerHTML += text.charAt(i);
+    setTimeout(()=>typeWriter(text,i+1),30);
+  }else{
+    continueBtn.classList.add("show");
   }
-  step();
-  continueBtn.classList.add("show");
 }
 
 function initPage(){
-  avatar.classList.remove("fade");
-  nameTag.classList.remove("fade");
+  avatar.classList.remove("fadeOut");
+  nameTag.classList.remove("fadeOut");
+  chatBubble.classList.remove("fadeOut");
   avatar.classList.add("show");
   nameTag.classList.add("show");
   chatBubble.classList.add("show");
-  typeWriter(getRandomMessage());
+  chatText.innerHTML = "";
+  typeWriter(messages[Math.floor(Math.random()*messages.length)]);
   audio.play().catch(()=>{});
 }
 
-// Load pertama kali
+// Load pertama
 window.addEventListener("load", initPage);
-window.addEventListener("pageshow", function(event) {
-  if(event.persisted){ initPage(); }
+window.addEventListener("pageshow", e=>{
+  if(e.persisted){ initPage(); }
 });
 
-// Audio tetap play saat tap layar
+// Pastikan audio tetap play saat tap
 document.body.addEventListener("click", ()=>audio.play().catch(()=>{}));
 
 // Tombol lanjut
 continueBtn.addEventListener("click", ()=>{
-  avatar.classList.add("fade");
-  nameTag.classList.add("fade");
-  continueBtn.classList.add("fade");
-  chatBubble.style.opacity=0;
-  setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",1000);
+  avatar.classList.add("fadeOut");
+  nameTag.classList.add("fadeOut");
+  chatBubble.classList.add("fadeOut");
+  continueBtn.classList.add("fadeOut");
+  setTimeout(()=> window.location.href="https://dynoticid.github.io/smartlink/",500);
 });
 
-// Pull-to-refresh
-let startY = 0, pullDistance = 0, threshold = 60;
-document.body.addEventListener("touchstart", e=>{ startY = e.touches[0].clientY; });
-document.body.addEventListener("touchmove", e=>{
-  let currentY = e.touches[0].clientY;
-  pullDistance = currentY - startY;
-  if(pullDistance>0){
-    refreshIndicator.style.opacity=Math.min(pullDistance/threshold,1);
-    if(pullDistance>threshold) refreshIndicator.classList.add("active");
-    else refreshIndicator.classList.remove("active");
+// Pull to refresh
+let startY=0, isPull=false;
+document.addEventListener("touchstart", e=>{
+  startY=e.touches[0].clientY;
+});
+document.addEventListener("touchmove", e=>{
+  let diff = e.touches[0].clientY - startY;
+  if(diff>50){
+    pull.style.display="block";
+    isPull=true;
   }
 });
-document.body.addEventListener("touchend", ()=>{
-  if(pullDistance>threshold){
+document.addEventListener("touchend", e=>{
+  if(isPull){
     location.reload();
-  } else {
-    refreshIndicator.classList.remove("active");
-    refreshIndicator.style.opacity=0;
   }
-  pullDistance=0;
+  pull.style.display="none";
+  isPull=false;
 });
 </script>
 
