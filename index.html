@@ -19,6 +19,26 @@ html,body{
   overflow:hidden;
   text-align:center;
 }
+.pull-refresh-indicator{
+  position:absolute;
+  top:10px;
+  width:40px;
+  height:40px;
+  border:4px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:none;
+  opacity:0;
+  transition: opacity 0.3s ease;
+}
+.pull-refresh-indicator.active{
+  animation:spin 1s linear infinite;
+  opacity:1;
+}
+@keyframes spin{
+  0%{transform:rotate(0deg);}
+  100%{transform:rotate(360deg);}
+}
 .avatar-container{
   display:flex;
   flex-direction:column;
@@ -40,13 +60,9 @@ html,body{
   opacity:1;
   transform:translateY(0);
 }
-.avatar-container img.loading{
-  animation:spin 1s linear infinite;
-  transform:translateY(0) scale(1.2);
-}
-@keyframes spin{
-  0%{transform:rotate(0deg) scale(1.2);}
-  100%{transform:rotate(360deg) scale(1.2);}
+.avatar-container img.fade{
+  opacity:0;
+  transform:scale(0.9);
 }
 .name-tag{
   font-weight:600;
@@ -61,6 +77,10 @@ html,body{
   opacity:1;
   transform:translateY(0);
 }
+.name-tag.fade{
+  opacity:0;
+  transform:scale(0.9);
+}
 .chat-bubble{
   background:rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
@@ -71,10 +91,11 @@ html,body{
   width:340px;
   font-size:1rem;
   box-shadow:0 5px 10px rgba(0,0,0,0.2);
-  text-align:left;
+  text-align:center;
+  margin:0 auto;
   position:relative;
   opacity:0;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.5s ease-in-out;
   overflow-y:auto;
 }
 .chat-bubble.show{
@@ -83,6 +104,7 @@ html,body{
 #chatText{
   display:block;
   word-wrap: break-word;
+  text-align:center;
 }
 #continueBtn{
   margin-top:25px;
@@ -100,22 +122,23 @@ html,body{
   opacity:0;
   transition: all 0.3s ease-out;
 }
-@keyframes pulse{
-  0%,100%{transform:scale(1);}
-  50%{transform:scale(1.1);}
-}
 #continueBtn.show{
   transform: scale(1);
   opacity:1;
-  animation:pulse 1s infinite;
+}
+#continueBtn.fade{
+  opacity:0;
+  transform:scale(0.9);
 }
 #continueBtn:hover{
   background:rgba(255,255,255,0.35);
-  transform: scale(1.15);
+  transform: scale(1.05);
 }
 </style>
 </head>
 <body>
+
+<div class="pull-refresh-indicator" id="refreshIndicator"></div>
 
 <audio id="bgAudio" autoplay loop>
   <source src="https://k.top4top.io/m_35959ooho0.mp3" type="audio/mpeg">
@@ -137,6 +160,7 @@ const chatBubble = document.getElementById("chatBubble");
 const chatText = document.getElementById("chatText");
 const continueBtn = document.getElementById("continueBtn");
 const audio = document.getElementById("bgAudio");
+const refreshIndicator = document.getElementById("refreshIndicator");
 
 // 50 template percakapan manusiawi
 const messages = [
@@ -193,51 +217,71 @@ const messages = [
 "Jangan lupa tersenyum sebentar. Sekarang ayo cek lagu kamu!"
 ];
 
-const chatMessage = messages[Math.floor(Math.random()*messages.length)];
-
-// Typewriter
-function typeWriter(text,i=0){
-  if(i < text.length){
-    chatText.innerHTML += text.charAt(i);
-    setTimeout(()=> typeWriter(text,i+1),30);
-  } else {
-    continueBtn.classList.add("show");
-  }
+function getRandomMessage(){
+  return messages[Math.floor(Math.random()*messages.length)];
 }
 
-// Load animasi
+function typeWriter(text,i=0){
+  chatText.innerHTML = "";
+  function step(){
+    if(i<text.length){
+      chatText.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(step,30);
+    }
+  }
+  step();
+  continueBtn.classList.add("show");
+}
+
 function initPage(){
-  avatar.classList.remove("loading");
+  avatar.classList.remove("fade");
+  nameTag.classList.remove("fade");
   avatar.classList.add("show");
   nameTag.classList.add("show");
   chatBubble.classList.add("show");
-  typeWriter(chatMessage);
+  typeWriter(getRandomMessage());
   audio.play().catch(()=>{});
 }
 
 // Load pertama kali
 window.addEventListener("load", initPage);
-
-// Tangani Back button / cache
 window.addEventListener("pageshow", function(event) {
-  if(event.persisted){
-    initPage();
-  }
+  if(event.persisted){ initPage(); }
 });
 
-// Pastikan audio tetap play saat tap layar
-document.body.addEventListener("click", ()=>{
-  audio.play().catch(()=>{});
-});
+// Audio tetap play saat tap layar
+document.body.addEventListener("click", ()=>audio.play().catch(()=>{}));
 
 // Tombol lanjut
 continueBtn.addEventListener("click", ()=>{
-  chatBubble.style.transition = "opacity 0.3s ease-out";
-  chatBubble.style.opacity = 0;
-  nameTag.style.transition = "opacity 0.3s ease-out";
-  nameTag.style.opacity = 0;
-  avatar.classList.add("loading");
-  setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",1500);
+  avatar.classList.add("fade");
+  nameTag.classList.add("fade");
+  continueBtn.classList.add("fade");
+  chatBubble.style.opacity=0;
+  setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",1000);
+});
+
+// Pull-to-refresh
+let startY = 0, pullDistance = 0, threshold = 60;
+document.body.addEventListener("touchstart", e=>{ startY = e.touches[0].clientY; });
+document.body.addEventListener("touchmove", e=>{
+  let currentY = e.touches[0].clientY;
+  pullDistance = currentY - startY;
+  if(pullDistance>0){
+    refreshIndicator.style.opacity=Math.min(pullDistance/threshold,1);
+    if(pullDistance>threshold) refreshIndicator.classList.add("active");
+    else refreshIndicator.classList.remove("active");
+  }
+});
+document.body.addEventListener("touchend", ()=>{
+  if(pullDistance>threshold){
+    location.reload();
+  } else {
+    refreshIndicator.classList.remove("active");
+    refreshIndicator.style.opacity=0;
+  }
+  pullDistance=0;
 });
 </script>
 
