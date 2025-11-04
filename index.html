@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Halo dari Bulan</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Outfit",sans-serif;}
+html,body{
+  height:100%;
+  width:100%;
+  background:linear-gradient(160deg,#3b0764,#6d28d9,#7e22ce);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  color:#f5f3ff;
+  overflow:hidden;
+  text-align:center;
+}
+.avatar-container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:20px;
+}
+.avatar-container img{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+  object-fit:cover;
+}
+.nametag{
+  margin-top:-10px;
+  font-weight:600;
+  font-size:1rem;
+  color:#fff;
+  text-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+.chat-bubble{
+  background:rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  color:#fff;
+  padding:14px 20px;
+  border-radius:20px;
+  width:360px;
+  height:160px;
+  font-size:1rem;
+  box-shadow:0 5px 10px rgba(0,0,0,0.2);
+  text-align:left;
+  position:relative;
+  opacity:0;
+  transition: opacity 0.5s ease-in-out;
+  overflow-y:auto;
+}
+.chat-bubble.show{
+  opacity:1;
+}
+#chatText{
+  display:block;
+  word-wrap: break-word;
+}
+#continueBtn{
+  margin-top:25px;
+  padding:10px 24px;
+  font-size:1rem;
+  font-weight:600;
+  color:#fff;
+  background:rgba(255,255,255,0.2);
+  border:1px solid rgba(255,255,255,0.3);
+  border-radius:14px;
+  cursor:pointer;
+  box-shadow:0 0 10px rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  transform: scale(0);
+  opacity:0;
+  transition: all 0.3s ease-out;
+}
+@keyframes pulse{
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.1);}
+}
+#continueBtn.show{
+  transform: scale(1);
+  opacity:1;
+  animation:pulse 1s infinite;
+}
+#continueBtn:hover{
+  background:rgba(255,255,255,0.35);
+  transform: scale(1.15);
+}
+</style>
+</head>
+<body>
+
+<div class="avatar-container">
+  <img src="https://i.imgur.com/nQNpS3C.gif" alt="Avatar Bulan">
+  <div class="nametag">Bulan</div>
+  <div class="chat-bubble" id="chatBubble">
+    <span id="chatText"></span>
+  </div>
+  <button id="continueBtn">Lanjut</button>
+</div>
+
+<script>
+const chatText = document.getElementById("chatText");
+const continueBtn = document.getElementById("continueBtn");
+const chatBubble = document.getElementById("chatBubble");
+
+// 50 template ramah, panjang, dua paragraf, fokus "kamu" + ajakan cek lagu
+const messages = [
+"Hei, kamu pasti sudah capek setelah semua aktivitas tadi. Aku harap kamu sempat tarik napas dan santai sebentar. Sekarang ayo cek lagu kamu sekarang!",
+"Gimana hari-hari kamu? Semoga semuanya lancar. Yuk, sekarang waktunya cek lagu kamu!",
+"Aku penasaran, ada hal seru apa aja hari ini? Nikmatin dulu momen kecilnya. Sekarang kita lihat lagu kamu!",
+"Kamu selalu berhasil bikin semua terasa nyaman. Saatnya cek lagu kamu sekarang!",
+"Lagi sibuk ya? Jangan lupa rehat sebentar. Sekarang ayo cek lagu kamu!",
+"Aku suka caramu menghadapi semua tantangan. Sekarang waktunya cek lagu kamu!",
+"Kamu selalu bisa bikin orang lain senang. Yuk, sekarang cek lagu kamu!",
+"Ada hal unik tentangmu yang bikin semua terasa hangat. Saatnya cek lagu kamu sekarang!",
+"Hei, aku harap kamu sempat senyum hari ini. Sekarang waktunya cek lagu kamu!",
+"Kamu punya energi yang bikin orang lain nyaman. Yuk, cek lagu kamu sekarang!",
+"Aku penasaran, kamu lagi denger lagu apa? Sekarang ayo cek lagu kamu!",
+"Kamu selalu bikin suasana hati jadi lebih baik. Saatnya cek lagu kamu sekarang!",
+"Lagi capek ya? Gapapa, rehat dulu sebentar. Sekarang waktunya cek lagu kamu!",
+"Hei, aku harap kamu ketemu hal kecil yang bikin senang hari ini. Sekarang ayo cek lagu kamu!",
+"Kamu selalu punya cara bikin orang lain nyaman. Saatnya cek lagu kamu sekarang!",
+"Aku suka caramu tersenyum tanpa alasan. Sekarang waktunya cek lagu kamu!",
+"Kamu berhasil melalui semuanya hari ini. Yuk, sekarang cek lagu kamu!",
+"Ada hal kecil yang bikin kamu bahagia hari ini? Saatnya cek lagu kamu sekarang!",
+"Kamu selalu bikin semua terasa lebih ringan. Sekarang ayo cek lagu kamu!",
+"Hei, jangan lupa bangga sama diri sendiri. Saatnya cek lagu kamu sekarang!",
+"Aku harap kamu sempat ketawa hari ini. Yuk, sekarang waktunya cek lagu kamu!",
+"Kamu selalu bikin hati orang lain hangat. Saatnya cek lagu kamu sekarang!",
+"Lagi santai sebentar? Nikmatin dulu momen itu. Sekarang ayo cek lagu kamu!",
+"Aku penasaran, apa yang bikin kamu senang hari ini? Saatnya cek lagu kamu sekarang!",
+"Kamu punya cara buat semua orang tersenyum. Sekarang waktunya cek lagu kamu!",
+"Hei, jangan lupa untuk rehat sebentar. Sekarang ayo cek lagu kamu!",
+"Aku suka caramu menghadapi semua dengan tenang. Saatnya cek lagu kamu sekarang!",
+"Kamu selalu berhasil bikin suasana hati ringan. Yuk, sekarang cek lagu kamu!",
+"Ada hal kecil yang bikin kamu senyum? Saatnya cek lagu kamu sekarang!",
+"Kamu punya energi positif yang bikin semua senang. Sekarang ayo cek lagu kamu!",
+"Aku harap kamu sempat nikmatin momen kecil. Saatnya cek lagu kamu sekarang!",
+"Kamu selalu bikin semua orang nyaman. Sekarang waktunya cek lagu kamu!",
+"Lagi rebahan sebentar? Nikmatin dulu, sekarang ayo cek lagu kamu!",
+"Aku penasaran, gimana perasaanmu hari ini? Saatnya cek lagu kamu sekarang!",
+"Kamu selalu berhasil bikin semua terasa menyenangkan. Sekarang ayo cek lagu kamu!",
+"Ada hal unik tentangmu yang bikin hati senang. Saatnya cek lagu kamu sekarang!",
+"Kamu punya cara bikin semua orang merasa istimewa. Yuk, sekarang cek lagu kamu!",
+"Aku suka caramu memperhatikan hal-hal kecil. Saatnya cek lagu kamu sekarang!",
+"Kamu selalu bikin suasana hati lebih hangat. Sekarang ayo cek lagu kamu!",
+"Lagi capek? Ambil napas sebentar, sekarang waktunya cek lagu kamu!",
+"Kamu punya energi yang bikin semua semangat. Saatnya cek lagu kamu sekarang!",
+"Aku harap kamu sempat senyum dan santai sebentar. Sekarang ayo cek lagu kamu!",
+"Kamu selalu berhasil bikin orang lain bahagia. Saatnya cek lagu kamu sekarang!",
+"Ada hal kecil yang bikin kamu nyaman? Yuk, sekarang cek lagu kamu!",
+"Kamu punya cara bikin semua orang senang. Saatnya cek lagu kamu sekarang!",
+"Aku penasaran, apa yang bikin kamu senang hari ini? Sekarang ayo cek lagu kamu!",
+"Kamu selalu berhasil bikin suasana hati lebih baik. Yuk, cek lagu kamu sekarang!",
+"Hei, jangan lupa ambil waktu sebentar untuk diri sendiri. Sekarang ayo cek lagu kamu!",
+"Kamu punya sentuhan yang bikin orang lain nyaman. Saatnya cek lagu kamu sekarang!"
+];
+
+// Pilih pesan random
+const chatMessage = messages[Math.floor(Math.random()*messages.length)];
+
+function typeWriter(text,i=0){
+  if(i < text.length){
+    chatText.innerHTML += text.charAt(i);
+    setTimeout(()=> typeWriter(text,i+1),30);
+  } else {
+    continueBtn.classList.add("show");
+  }
+}
+
+window.addEventListener("load", ()=>{
+  chatBubble.classList.add("show"); // fade-in bubble
+  setTimeout(()=> typeWriter(chatMessage), 500);
+});
+
+continueBtn.addEventListener("click", ()=>{
+  chatBubble.style.transition = "opacity 0.5s ease-in-out";
+  chatBubble.style.opacity = 0;
+  setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",500);
+});
+</script>
+
+</body>
+</html>
