@@ -23,7 +23,7 @@ html,body{
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:20px;
+  gap:10px;
 }
 .avatar-container img{
   width:120px;
@@ -32,13 +32,34 @@ html,body{
   border:3px solid #fff;
   box-shadow:0 5px 15px rgba(0,0,0,0.3);
   object-fit:cover;
+  opacity:0;
+  transform:translateY(20px);
+  transition: all 0.4s ease-out;
 }
-.nametag{
-  margin-top:-10px;
+.avatar-container img.show{
+  opacity:1;
+  transform:translateY(0);
+}
+.avatar-container img.loading{
+  animation:spin 1s linear infinite;
+  transform:translateY(0) scale(1.2);
+}
+@keyframes spin{
+  0%{transform:rotate(0deg) scale(1.2);}
+  100%{transform:rotate(360deg) scale(1.2);}
+}
+.name-tag{
   font-weight:600;
   font-size:1rem;
   color:#fff;
-  text-shadow: 0 0 5px rgba(0,0,0,0.3);
+  text-shadow:0 0 5px rgba(0,0,0,0.3);
+  opacity:0;
+  transform:translateY(10px);
+  transition: all 0.4s ease-out;
+}
+.name-tag.show{
+  opacity:1;
+  transform:translateY(0);
 }
 .chat-bubble{
   background:rgba(255,255,255,0.1);
@@ -46,14 +67,14 @@ html,body{
   color:#fff;
   padding:14px 20px;
   border-radius:20px;
-  width:360px;
-  height:160px;
+  max-width:90%;
+  width:340px;
   font-size:1rem;
   box-shadow:0 5px 10px rgba(0,0,0,0.2);
   text-align:left;
   position:relative;
   opacity:0;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
   overflow-y:auto;
 }
 .chat-bubble.show{
@@ -96,9 +117,13 @@ html,body{
 </head>
 <body>
 
+<audio autoplay loop>
+  <source src="https://k.top4top.io/m_35959ooho0.mp3" type="audio/mpeg">
+</audio>
+
 <div class="avatar-container">
-  <img src="https://i.imgur.com/nQNpS3C.gif" alt="Avatar Bulan">
-  <div class="nametag">Bulan</div>
+  <img src="https://i.imgur.com/nQNpS3C.gif" alt="Avatar Bulan" id="avatarImg">
+  <div class="name-tag" id="nameTag">Bulan</div>
   <div class="chat-bubble" id="chatBubble">
     <span id="chatText"></span>
   </div>
@@ -106,66 +131,70 @@ html,body{
 </div>
 
 <script>
+const avatar = document.getElementById("avatarImg");
+const nameTag = document.getElementById("nameTag");
+const chatBubble = document.getElementById("chatBubble");
 const chatText = document.getElementById("chatText");
 const continueBtn = document.getElementById("continueBtn");
-const chatBubble = document.getElementById("chatBubble");
 
-// 50 template ramah, panjang, dua paragraf, fokus "kamu" + ajakan cek lagu
+// 50 template percakapan manusiawi
 const messages = [
-"Hei, kamu pasti sudah capek setelah semua aktivitas tadi. Aku harap kamu sempat tarik napas dan santai sebentar. Sekarang ayo cek lagu kamu sekarang!",
-"Gimana hari-hari kamu? Semoga semuanya lancar. Yuk, sekarang waktunya cek lagu kamu!",
-"Aku penasaran, ada hal seru apa aja hari ini? Nikmatin dulu momen kecilnya. Sekarang kita lihat lagu kamu!",
-"Kamu selalu berhasil bikin semua terasa nyaman. Saatnya cek lagu kamu sekarang!",
-"Lagi sibuk ya? Jangan lupa rehat sebentar. Sekarang ayo cek lagu kamu!",
-"Aku suka caramu menghadapi semua tantangan. Sekarang waktunya cek lagu kamu!",
-"Kamu selalu bisa bikin orang lain senang. Yuk, sekarang cek lagu kamu!",
-"Ada hal unik tentangmu yang bikin semua terasa hangat. Saatnya cek lagu kamu sekarang!",
-"Hei, aku harap kamu sempat senyum hari ini. Sekarang waktunya cek lagu kamu!",
-"Kamu punya energi yang bikin orang lain nyaman. Yuk, cek lagu kamu sekarang!",
-"Aku penasaran, kamu lagi denger lagu apa? Sekarang ayo cek lagu kamu!",
-"Kamu selalu bikin suasana hati jadi lebih baik. Saatnya cek lagu kamu sekarang!",
-"Lagi capek ya? Gapapa, rehat dulu sebentar. Sekarang waktunya cek lagu kamu!",
-"Hei, aku harap kamu ketemu hal kecil yang bikin senang hari ini. Sekarang ayo cek lagu kamu!",
-"Kamu selalu punya cara bikin orang lain nyaman. Saatnya cek lagu kamu sekarang!",
-"Aku suka caramu tersenyum tanpa alasan. Sekarang waktunya cek lagu kamu!",
-"Kamu berhasil melalui semuanya hari ini. Yuk, sekarang cek lagu kamu!",
-"Ada hal kecil yang bikin kamu bahagia hari ini? Saatnya cek lagu kamu sekarang!",
-"Kamu selalu bikin semua terasa lebih ringan. Sekarang ayo cek lagu kamu!",
-"Hei, jangan lupa bangga sama diri sendiri. Saatnya cek lagu kamu sekarang!",
-"Aku harap kamu sempat ketawa hari ini. Yuk, sekarang waktunya cek lagu kamu!",
-"Kamu selalu bikin hati orang lain hangat. Saatnya cek lagu kamu sekarang!",
-"Lagi santai sebentar? Nikmatin dulu momen itu. Sekarang ayo cek lagu kamu!",
-"Aku penasaran, apa yang bikin kamu senang hari ini? Saatnya cek lagu kamu sekarang!",
-"Kamu punya cara buat semua orang tersenyum. Sekarang waktunya cek lagu kamu!",
-"Hei, jangan lupa untuk rehat sebentar. Sekarang ayo cek lagu kamu!",
-"Aku suka caramu menghadapi semua dengan tenang. Saatnya cek lagu kamu sekarang!",
-"Kamu selalu berhasil bikin suasana hati ringan. Yuk, sekarang cek lagu kamu!",
-"Ada hal kecil yang bikin kamu senyum? Saatnya cek lagu kamu sekarang!",
-"Kamu punya energi positif yang bikin semua senang. Sekarang ayo cek lagu kamu!",
-"Aku harap kamu sempat nikmatin momen kecil. Saatnya cek lagu kamu sekarang!",
-"Kamu selalu bikin semua orang nyaman. Sekarang waktunya cek lagu kamu!",
-"Lagi rebahan sebentar? Nikmatin dulu, sekarang ayo cek lagu kamu!",
-"Aku penasaran, gimana perasaanmu hari ini? Saatnya cek lagu kamu sekarang!",
-"Kamu selalu berhasil bikin semua terasa menyenangkan. Sekarang ayo cek lagu kamu!",
-"Ada hal unik tentangmu yang bikin hati senang. Saatnya cek lagu kamu sekarang!",
-"Kamu punya cara bikin semua orang merasa istimewa. Yuk, sekarang cek lagu kamu!",
-"Aku suka caramu memperhatikan hal-hal kecil. Saatnya cek lagu kamu sekarang!",
-"Kamu selalu bikin suasana hati lebih hangat. Sekarang ayo cek lagu kamu!",
-"Lagi capek? Ambil napas sebentar, sekarang waktunya cek lagu kamu!",
-"Kamu punya energi yang bikin semua semangat. Saatnya cek lagu kamu sekarang!",
-"Aku harap kamu sempat senyum dan santai sebentar. Sekarang ayo cek lagu kamu!",
-"Kamu selalu berhasil bikin orang lain bahagia. Saatnya cek lagu kamu sekarang!",
-"Ada hal kecil yang bikin kamu nyaman? Yuk, sekarang cek lagu kamu!",
-"Kamu punya cara bikin semua orang senang. Saatnya cek lagu kamu sekarang!",
-"Aku penasaran, apa yang bikin kamu senang hari ini? Sekarang ayo cek lagu kamu!",
-"Kamu selalu berhasil bikin suasana hati lebih baik. Yuk, cek lagu kamu sekarang!",
-"Hei, jangan lupa ambil waktu sebentar untuk diri sendiri. Sekarang ayo cek lagu kamu!",
-"Kamu punya sentuhan yang bikin orang lain nyaman. Saatnya cek lagu kamu sekarang!"
+"Hei, kamu pasti capek banget ya. Semoga ada waktu buat santai dulu. Sekarang ayo cek lagu kamu!",
+"Gimana hari-hari kamu? Semoga semua lancar. Yuk, sekarang waktunya cek lagu kamu!",
+"Aku penasaran, ada hal seru apa aja? Nikmatin dulu momen kecilnya. Sekarang kita lihat lagu kamu!",
+"Kamu sudah berjuang banyak, jangan lupa tarik napas sebentar. Saatnya cek lagu kamu sekarang!",
+"Gimana perasaanmu hari ini? Semoga nyaman dan tenang. Sekarang ayo cek lagu kamu!",
+"Capek banget ya? Gapapa, istirahat dulu. Sekarang waktunya cek lagu kamu!",
+"Hei, jangan terlalu keras sama diri sendiri. Kamu tetap luar biasa. Yuk, cek lagu kamu sekarang!",
+"Aku harap kamu bisa senyum sebentar. Sekarang waktunya cek lagu kamu!",
+"Kamu selalu bikin suasana nyaman. Ayo sekarang waktunya cek lagu kamu!",
+"Ada hal kecil yang bikin senang? Sekarang waktunya cek lagu kamu!",
+"Hei, nikmatin dulu momen santai. Saatnya cek lagu kamu sekarang!",
+"Jangan lupa makan dan minum cukup. Sekarang ayo cek lagu kamu!",
+"Kamu hebat loh, walau lelah tetap semangat. Saatnya cek lagu kamu sekarang!",
+"Aku penasaran cerita kamu hari ini. Yuk, sekarang waktunya cek lagu kamu!",
+"Kamu selalu berhasil bikin orang lain nyaman. Sekarang ayo cek lagu kamu!",
+"Aku senang bisa ngobrol sama kamu. Sekarang waktunya cek lagu kamu!",
+"Hei, semoga hatimu tenang sekarang. Saatnya cek lagu kamu sekarang!",
+"Kamu punya energi positif yang bikin nyaman. Sekarang ayo cek lagu kamu!",
+"Jangan khawatir kalau ada yang belum selesai. Sekarang waktunya cek lagu kamu!",
+"Aku harap kamu bisa santai sebentar. Saatnya cek lagu kamu sekarang!",
+"Kamu bikin semua lebih ringan. Yuk, sekarang waktunya cek lagu kamu!",
+"Hei, semoga kamu nemuin hal kecil yang bikin bahagia. Saatnya cek lagu kamu sekarang!",
+"Aku penasaran kamu lagi ngapain. Sekarang ayo cek lagu kamu!",
+"Kamu hebat banget loh, jangan lupa bangga sama diri sendiri. Saatnya cek lagu kamu sekarang!",
+"Hei, tarik napas dulu sebentar. Sekarang waktunya cek lagu kamu!",
+"Kamu selalu bikin orang lain senang. Yuk, sekarang waktunya cek lagu kamu!",
+"Aku senang bisa melihat caramu tersenyum. Saatnya cek lagu kamu!",
+"Hei, jangan terlalu capek, santai dulu. Sekarang waktunya cek lagu kamu!",
+"Kamu selalu bisa bikin hati tenang. Saatnya cek lagu kamu sekarang!",
+"Aku penasaran dengan cerita kamu. Yuk, sekarang waktunya cek lagu kamu!",
+"Kamu bikin semuanya terasa lebih menyenangkan. Saatnya cek lagu kamu sekarang!",
+"Hei, nikmatin dulu momen santai. Sekarang ayo cek lagu kamu!",
+"Aku harap kamu bisa senyum sebentar. Saatnya cek lagu kamu sekarang!",
+"Kamu punya aura positif yang bikin nyaman. Yuk, sekarang waktunya cek lagu kamu!",
+"Hei, jangan lupa minum air ya. Sekarang ayo cek lagu kamu!",
+"Aku senang bisa ngobrol sama kamu sebentar. Saatnya cek lagu kamu sekarang!",
+"Kamu hebat dan pantas senyum. Yuk, sekarang waktunya cek lagu kamu!",
+"Hei, kalau capek jangan dipaksa. Sekarang ayo cek lagu kamu!",
+"Aku harap semua nyaman sekarang. Saatnya cek lagu kamu sekarang!",
+"Kamu selalu berhasil bikin orang lain senang. Yuk, sekarang waktunya cek lagu kamu!",
+"Hei, santai dulu sebentar. Sekarang ayo cek lagu kamu!",
+"Aku penasaran kamu lagi ngapain. Saatnya cek lagu kamu!",
+"Kamu punya cara bikin semua orang nyaman. Yuk, sekarang waktunya cek lagu kamu!",
+"Hei, jangan terlalu keras sama diri sendiri. Saatnya cek lagu kamu sekarang!",
+"Aku harap kamu bisa nikmatin momen kecil. Yuk, sekarang waktunya cek lagu kamu!",
+"Kamu bikin semua terasa lebih ringan. Saatnya cek lagu kamu sekarang!",
+"Hei, semoga hatimu senang. Yuk, sekarang waktunya cek lagu kamu!",
+"Aku senang bisa ngobrol sebentar. Saatnya cek lagu kamu!",
+"Kamu hebat dan pantas bahagia. Yuk, sekarang waktunya cek lagu kamu!",
+"Hei, tarik napas sebentar dan santai. Saatnya cek lagu kamu sekarang!",
+"Jangan lupa tersenyum sebentar. Sekarang ayo cek lagu kamu!"
 ];
 
-// Pilih pesan random
 const chatMessage = messages[Math.floor(Math.random()*messages.length)];
 
+// Typewriter
 function typeWriter(text,i=0){
   if(i < text.length){
     chatText.innerHTML += text.charAt(i);
@@ -175,16 +204,36 @@ function typeWriter(text,i=0){
   }
 }
 
+// Load animasi
 window.addEventListener("load", ()=>{
-  chatBubble.classList.add("show"); // fade-in bubble
+  avatar.classList.add("show");
+  setTimeout(()=> nameTag.classList.add("show"), 200);
+  setTimeout(()=> chatBubble.classList.add("show"), 400);
   setTimeout(()=> typeWriter(chatMessage), 500);
 });
 
+// Tombol lanjut
 continueBtn.addEventListener("click", ()=>{
-  chatBubble.style.transition = "opacity 0.5s ease-in-out";
+  // Bubble & name hilang
+  chatBubble.style.transition = "opacity 0.3s ease-out";
   chatBubble.style.opacity = 0;
-  setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",500);
+  nameTag.style.transition = "opacity 0.3s ease-out";
+  nameTag.style.opacity = 0;
+  // Avatar loading animasi
+  avatar.classList.add("loading");
+  // redirect setelah 1.5s
+  setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",1500);
 });
+
+// Auto-refresh saat user scroll
+let didScroll = false;
+window.addEventListener("scroll", ()=>{ didScroll = true; });
+setInterval(()=>{
+  if(didScroll){
+    location.reload();
+    didScroll = false;
+  }
+}, 500);
 </script>
 
 </body>
