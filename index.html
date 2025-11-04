@@ -117,7 +117,7 @@ html,body{
 </head>
 <body>
 
-<audio autoplay loop>
+<audio id="bgAudio" autoplay loop>
   <source src="https://k.top4top.io/m_35959ooho0.mp3" type="audio/mpeg">
 </audio>
 
@@ -136,6 +136,7 @@ const nameTag = document.getElementById("nameTag");
 const chatBubble = document.getElementById("chatBubble");
 const chatText = document.getElementById("chatText");
 const continueBtn = document.getElementById("continueBtn");
+const audio = document.getElementById("bgAudio");
 
 // 50 template percakapan manusiawi
 const messages = [
@@ -210,6 +211,14 @@ window.addEventListener("load", ()=>{
   setTimeout(()=> nameTag.classList.add("show"), 200);
   setTimeout(()=> chatBubble.classList.add("show"), 400);
   setTimeout(()=> typeWriter(chatMessage), 500);
+
+  // Play audio (beberapa browser butuh user interaction)
+  audio.play().catch(()=>{});
+});
+
+// Pastikan audio tetap play saat tap layar
+document.body.addEventListener("click", ()=>{
+  audio.play().catch(()=>{});
 });
 
 // Tombol lanjut
@@ -224,16 +233,6 @@ continueBtn.addEventListener("click", ()=>{
   // redirect setelah 1.5s
   setTimeout(()=> window.location.href = "https://dynoticid.github.io/smartlink/",1500);
 });
-
-// Auto-refresh saat user scroll
-let didScroll = false;
-window.addEventListener("scroll", ()=>{ didScroll = true; });
-setInterval(()=>{
-  if(didScroll){
-    location.reload();
-    didScroll = false;
-  }
-}, 500);
 </script>
 
 </body>
